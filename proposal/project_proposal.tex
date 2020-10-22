@@ -1,0 +1,173 @@
+\documentclass[12pt]{article}
+% \usepackage{fullpage}
+\usepackage{epic}
+\usepackage{eepic}
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{algorithm,algorithmic}
+\usepackage{tikz}
+\usepackage{xcolor,colortbl}
+\usepackage{wrapfig}
+\usepackage{float}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is FULLPAGE.STY by H.Partl, Version 2 as of 15 Dec 1988.
+% Document Style Option to fill the paper just like Plain TeX.
+
+\typeout{Style Option FULLPAGE Version 2 as of 15 Dec 1988}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+
+\textheight 8.9in
+
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+
+\textwidth 6.5in
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{empty}
+\setlength{\oddsidemargin}{0in}
+\setlength{\topmargin}{-0.8in}
+\setlength{\textwidth}{6.8in}
+\setlength{\textheight}{9.5in}
+
+
+\def\ind{\hspace*{0.3in}}
+\def\gap{0.1in}
+\def\bigap{0.25in}
+\newcommand{\Xomit}[1]{}
+
+\author{Jonathan Gao}
+
+\begin{document}
+
+\begin{titlepage}
+   \begin{center}
+       \vspace*{5cm}
+       {\huge\textbf{CPU governance and scheduling using machine learning implemented on a Linux kernel}}
+       \vspace{1.5cm}
+       
+       \textbf{Jonathan Gao}
+       \vfill
+       \vspace{0.8cm}
+       Cornell University\\
+       \today
+            
+   \end{center}
+\end{titlepage}
+
+\section*{Project Introduction}
+\ind As an exploratory dive into the Linux kernel, I will be modifying the Linux CPU scheduler and governor using learned decisions from a machine learning model. This project will be implemented specifically on a Raspberry Pi 4 Model B, a small single board computer running a quad-core ARM SoC. Thus, this modification will be specifically done to the Raspberry Pi OS linux distro.
+
+This project was inspired by the constant tug-of-war between performance and power consumption. Schedulers and CPU frequency scaling have largely remained separate. Schedulers ``maximize throughput, minimize wait time, minimize latency, and maximize fairness''~\cite{SchedulingComputing2020}. CPU governors instead ``scale the CPU frequency up or down in order to save power''~\cite{CPUFrequencyScaling}. These two operations are innately tied together, as frequency scaling is dependent on CPU load, and CPU load is determined by the scheduler. So what if these two operations become intertwined?
+
+\vspace{3mm}
+We can consider several cases where this may be advantageous. 
+
+\begin{enumerate}
+    \item To optimize for power, the CPU governor should only scale frequency up when we significantly load our CPU. Processes that are dominated by idle time, e.g. by I/O operations, can squander away high power CPU time. Optimally, we should increase CPU frequency only when our CPU is expected to be fully loaded - something we can accomplish through scheduling.
+    \item Given how a majority of current CPU frequency scaling works (by aggressive shifts up and gradual shifts down), we should consider how much power we waste by constantly scaling up and down repeatedly. If we could estimate our CPU load times, could we prevent unnecessary scaling? e.g. intermittent repeated short processes just above the scaling threshold can lead to a CPU constantly scaling up to max frequency despite minimal load.
+    \item CPU frequency can affect process wait time, throughput, and latency - factors that contribute to scheduling decisions. How do we decide on an optimal frequency then? On current governors, we see that CPU load directly determine frequency scaling. But, what if our CPU does not necessarily need max frequency, even at full load? e.g. a long latency-insensitive process or a process that simply runs in the background without terminating.
+\end{enumerate}
+
+While we can prove an optimal algorithm that can use all of our inputs to decide CPU frequency and CPU scheduling, I will not be pursuing that route. Rather, as an experiment I will try to use a machine learning algorithm to do the balancing. I will try to pose this problem of scheduling and frequency scaling as a classification problem, where given certain inputs we will determine the next process that should be scheduled and the frequency at which we will run our CPU.
+
+
+\section*{Semester goals}
+\ind For this current semester, I will be primarily focused on research. As I have no experience working with the Linux source code, initial steps include unraveling the Linux kernel and learning to make modifications appropriately. 
+
+A few goals are outlined for this semester:
+\begin{enumerate}
+    \item Compile a Linux kernel and boot
+    \item Understand the architecture of the Linux kernel, more specifically how the cpufreq and sched modules of the kernel are implemented
+    \item Make a change to the Linux kernel, recompile, and boot
+    \item Derive methods to inject a machine learning algorithm somewhere into the mix. More research needs to be done on how this can be exactly implemented. Currently thinking of training the model offline with data, but that will then require obtaining a dataset somehow.
+    \item As a continuation of above, I will need to look into learning algorithms. I am currently thinking of a standard SVM classifier, but that requires test data under a supervised learning model. Unsupervised learning may be a better approach, but I am not as familiar in this domain. Training might be much easier on a test framework that simulates the kernel as it will also be easier to train over epochs.
+    \item Again as above, a test framework will be optimal. Not only will it help with model training, but also with testing and data collection.
+\end{enumerate}
+\section*{Final deliverables}
+The deliverables I plan to have by the end of this project are:
+
+\begin{itemize}
+    \item A modified Linux kernel with a ML-driven scheduler and CPU governor.
+    \item or, a patch to the Linux kernel that makes these changes.
+    \item An analysis on performance, pointing out optimal workloads and sub-optimal workloads with comparisons to existing methods.
+\end{itemize}
+
+\section*{Testing}
+
+\ind Testing for this project can take a multitude of paths. 
+
+\subsubsection*{On the Raspberry Pi itself}
+
+\ind The Raspberry Pi allows configuration of multiple kernel images through the boot partition. Using this allows me to easily switch between kernels with both kernel images on the SD card. Using a bash script, I can create a workload to benchmark and test my algorithm.
+
+\subsubsection*{Using a virtual test framework}
+
+\ind As aforementioned, I will also look into creating a test framework that can emulate the kernel. This will be optimal, as then I should be able to do testing on my computer instead of the Raspberry Pi. This will also constrain the variability to only within my algorithm.
+
+\subsubsection*{Data points}
+
+When testing, I will be focused on the following data points
+\begin{itemize}
+    \item Power consumption (averaged)
+    \item Wait time, response time, and throughput of processes
+    \item Histograms of time spent in each frequency quanta
+    \item Time spent in the kernel vs time spend in user processes
+\end{itemize}
+
+\section*{Tentative design}
+
+This section will discuss the current implementation details I have, prior to any deep dives.
+
+\subsubsection*{Machine learning approaches}
+\ind For the machine learning algorithm, I want to optimize for speed in calculations. This naturally warrants simpler models such as support vector machines (SVM) as opposed to complex convolutional networks. 
+
+\begin{enumerate}
+    \item An SVM classifier to predict the level a process belongs to in a multilevel feedback queue scheduler, rather than the continous promotion and demotion. This may be similar to guessing how much CPU quanta each process requires, which could be another technique. This might be a good approach as most operating systems today use multilevel feedback queues as their scheduler. The mentioned design may be similar to the one discussed in this paper~\cite{satyanarayanaImprovedProcessScheduling2018}. This method may require a separate component for CPU frequency, where another SVM classifier can predict the frequency level based on statistics like queue capacity in each level. \\
+    This approach may also prevent starvation in a multilevel feedback queue, or be able to avoid the overhead of feedback queues by better predictions for a regular multilevel queue as noted here~\cite{DifferenceMultilevelQueue2020}. Furthermore, the model can be used to determine whether or not to pre-empt running processes.
+    \item The above design can be extended using a generative adversarial network, or GAN for short, to avoid the need of a supervised test dataset. However, much more research must be done to determine its feasibility. My guess is that I will end up constrained by hardware limitations unless I can develop a test framework.
+    \item A genetic algorithm could potentially be used for unsupervised learning as well, but there is no guarantee on its performance and I also do not have much experience in it. Could be worth a look though.
+    \item Lastly - into the realm of unsupervised learning models, a denoising autoencoder network may also work. They are good at dimensionality reduction, which might be helpful in determining how each input should be weighed in making a decision in scheduling.
+    \item Another approach may be to use machine learning algorithms to decide between several different scheduling algorithms. There are many algorithms in place that each have their advantages. Instead, we may be able to exploit those advantages simultaneously.
+\end{enumerate}
+
+My best bet is the first approach mentioned. Multilevel feedback queues are plentiful and abundant, where an SVM would be essentially an added boost of performance (hopefully). However, with more research the other methods could prove fruitful. 
+
+Currently, I believe that incorporating CPU frequency scaling into scheduling decisions may return the largest profits in power and performance. Perhaps some classifier can be used to predict workload types, on which we can scale our frequency accordingly?
+
+All of these techniques will likely require copious amounts of data, which may be a challenge as discussed below.
+
+\subsubsection*{Test apparatus}
+
+\ind Using a Raspberry Pi makes it much easier to test kernels as the kernel is configurable from the boot partition. The boot partition allows selection of kernel images, of which multiple can be installed at a time. This would allow me to compare workloads quickly without the trouble of manually configuring the OS boot loader each time.
+
+Using the Raspberry Pi also makes it really easy to test power consumption, where there is no battery onboard to buffer power consumption and I can use a battery to emulate power constraints.
+
+It also allows cross-compilation of the the kernel using my laptop or even ecelinux, which will definitely speed up development. 
+
+\section*{Additional thoughts}
+
+\subsubsection*{Multiprocessor scheduling vs uniprocessor scheduling}
+\ind Multiprocessor scheduling might be much more complicated than the uniprocessor scheduling that I have learned. This will definitely require a deeper dive as this may end up increasing the complexity of this project severely. As mentioned, multiprocessor scheduling is an entirely different challenge as factors like cache affinity, NUMA, and concurrency can change scheduling decisions~\cite{CpuschedmultiPdf}.
+\subsubsection*{Performance impact of scheduling using a ML algorithm}
+\ind As most scheduling algorithms are implemented to be as fast as possible, the overhead of running an machine learning algorithm might be orders of magnitude larger. Thus, this approach may not be worth pursuing for practical purposes, but rather for an exploratory dive into the possibility.
+\subsubsection*{Feasibility of Linux Kernel modification}
+\ind Having no experience in modifying the Linux kernel, I may end up finding that the Linux kernel is too complex to fully understand within the time frame proposed for this project. While I am limiting the scope to just the scheduler and governor, it may still end up being too complex. Thus, I will reduce the scope of this project as necessary and update the project goals accordingly. An example of such a change may be to only implement a ML-driven governor, as a governor should be simpler.
+\subsubsection*{Data}
+Machine learning is a beast constantly thirsting for more data. Coming with this data may be a challenge, especially for supervised learning as there is not really a correct level for a multilevel queue. Thus, either I have to generate these through approximation, or develop another metric that I can optimize for.
+
+\section*{Expected Results}
+
+Expectations are not high for any noticable improvement in scheduling performance or power consumption. As mentioned previously, the overheads of a machine learning algorithm may end up overwhelming any performance gains. Rather, this project is an exploration into the potential of machine learning algorithms in scheduling and the potential of co-dependent scheduling-governance algorithms.
+
+\bibliography{references}{}
+\bibliographystyle{ieeetr}
+
+\end{document}
+
