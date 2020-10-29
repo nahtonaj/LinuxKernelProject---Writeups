@@ -1,4 +1,4 @@
-% !TeX root = ./weekly-report-10-19-20.tex
+% !TeX root = ./weekly-report-10-26-20.tex
 \documentclass[12pt]{article}
 % \usepackage{fullpage}
 \usepackage{epic}
@@ -62,13 +62,22 @@ NetID: jg992
 
 \section*{Progress this week}
 \ind I went through the Lab 4 guide for ECE 5725, and have cross-compiled and patched the kernel for Raspberry Pi OS 5.4.72. This was relatively straightforward and I didn't run into much trouble doing so. 
+
+I also read through several papers discussing learning algorithms in multi-level feedback queue. The first one, which uses support vector machines to predict priorities~\cite{satyanarayanaImprovedProcessScheduling2018}, was very unsubstantial and had almost no analysis or validation of results. Rather it seems like it was a roughly put together paper for school. I did have some takeaways, where an prediction algorithm can prevent a scheduler from sorting processes according to their burst times. The other paper by Rinku and AshaRani~\cite{rinkuReinforcementLearningBased2020} was much more insightful. They used an objective function for promoting/demoting between several types of queues. The multi-objective function uses weights that are learned over time, meaning that the scheduler will learn to optimize for processes it has seen. This is similar to the genetic algorithm idea I had, and it also doesn't require any learning data! This might be the way to go.
+
+I also found some resources teaching you how to write your own OS, which includes how to write a scheduler that could be helpful~\cite{sandlerPart08Processes}~\cite{Scheduler}
+
 \section*{Plan for coming week}
-\ind The project proposal lists numerous avenues in which I can incorporate machine learning into scheduling and CPU governance. However, I really do need to read more into some background of scheduling. As I mention in the proposal, multiprocessor scheduling is an entirely different beast compared to uniprocessor scheduling. There are also so many different types of machine learning algorithms that I will try take a look into. I also want to learn more about the current scope of scheduling algorithms, and perhaps figure out why multilevel feedback queues are so popular in modern operating systems (and why Linux seems to diverge with the Completely Fair Scheduler in 2.64 and how the Brain F*** Scheduler manages to get even better performance). Lots of reading! I have many articles and references already lined up, which will take some time to digest.
+\ind I'm still reading through several other papers, but I want to start working with the kernel next week. Next week may end up being a busy week, so I will see what I can get through. 
+
+Hoping to dig into the kernel code itself, and seeing if I can determine how the code works.
 \section*{Problems}
 No problems so far.
 \section*{Long term plan: still OK?}
 Hopefully so! 
 
+\bibliographystyle{ieeetr}
+\bibliography{references}
 
 
 
