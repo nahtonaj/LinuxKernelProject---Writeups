@@ -84,6 +84,7 @@ While we can prove an optimal algorithm that can use all of our inputs to decide
 A few goals are outlined for this semester:
 \begin{enumerate}
     \item Compile a Linux kernel and boot
+    \subitem Using the Lab 4 guide from ECE 5725, I downloaded the Raspberry Pi OS 5.4.72 source code from the github repo and patched it using the PREEMPT RT 5.4.70 patch for real-time kernels. Then, I used a cross-compile toolchain to build the kernel on my Linux machine~\cite{KernelBuildingRaspberry}. 
     \item Understand the architecture of the Linux kernel, more specifically how the cpufreq and sched modules of the kernel are implemented
     \item Derive methods to inject a machine learning algorithm somewhere into the mix. More research needs to be done on how this can be exactly implemented. Currently thinking of training the model offline with data, but that will then require obtaining a dataset somehow.
     \item As a continuation of above, I will need to look into learning algorithms. I am currently thinking of a standard SVM classifier, but that requires test data under a supervised learning model. Unsupervised learning may be a better approach, but I am not as familiar in this domain. Training might be much easier on a test framework that simulates the kernel as it will also be easier to train over epochs.
@@ -152,8 +153,8 @@ It also allows cross-compilation of the the kernel using my laptop or even eceli
 
 \section*{Additional thoughts}
 
-\subsubsection*{Multiprocessor scheduling vs uniprocessor scheduling}
-\ind Multiprocessor scheduling might be much more complicated than the uniprocessor scheduling that I have learned. This will definitely require a deeper dive as this may end up increasing the complexity of this project severely. As mentioned, multiprocessor scheduling is an entirely different challenge as factors like cache affinity, NUMA, and concurrency can change scheduling decisions~\cite{CpuschedmultiPdf}.
+\subsubsection*{Multicore scheduling vs single core scheduling}
+\ind Multicore scheduling might be much more complicated than the single core scheduling that I have learned. This will definitely require a deeper dive as this may end up increasing the complexity of this project severely. Scheduling across multiple cores will have varying complexity depending on architecture. For example, newer Intel architectures can support NUMA computing, which leads to concerns such as cache affinity as scheduling one process onto different cores has different costs due to varying cache performance~\cite{CpuschedmultiPdf}. However, in this project I will focus on a multicore processor model without these concerns. The Raspberry Pi 4 uses the ARM Cortex A72 core design in the BCM2711 chip, which offers a quad core processor.
 \subsubsection*{Performance impact of scheduling using a ML algorithm}
 \ind As most scheduling algorithms are implemented to be as fast as possible, the overhead of running an machine learning algorithm might be orders of magnitude larger. Thus, this approach may not be worth pursuing for practical purposes, but rather for an exploratory dive into the possibility.
 \subsubsection*{Feasibility of Linux Kernel modification}

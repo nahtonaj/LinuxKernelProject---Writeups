@@ -1,0 +1,77 @@
+% !TeX root = ./weekly-report-10-19-20.tex
+\documentclass[12pt]{article}
+% \usepackage{fullpage}
+\usepackage{epic}
+\usepackage{eepic}
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{algorithm,algorithmic}
+\usepackage{tikz}
+\usepackage{xcolor,colortbl}
+\usepackage{wrapfig}
+\usepackage{float}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is FULLPAGE.STY by H.Partl, Version 2 as of 15 Dec 1988.
+% Document Style Option to fill the paper just like Plain TeX.
+
+\typeout{Style Option FULLPAGE Version 2 as of 15 Dec 1988}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+
+\textheight 8.9in
+
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+
+\textwidth 6.5in
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{empty}
+\setlength{\oddsidemargin}{0in}
+\setlength{\topmargin}{-0.8in}
+\setlength{\textwidth}{6.8in}
+\setlength{\textheight}{9.5in}
+
+
+\def\ind{\hspace*{0.3in}}
+\def\gap{0.1in}
+\def\bigap{0.25in}
+\newcommand{\Xomit}[1]{}
+
+
+\begin{document}
+
+\setlength{\parindent}{0in}
+\addtolength{\parskip}{0.1cm}
+\setlength{\fboxrule}{.5mm}\setlength{\fboxsep}{1.2mm}
+\newlength{\boxlength}\setlength{\boxlength}{\textwidth}
+\addtolength{\boxlength}{-4mm}
+\begin{center}\framebox{\parbox{\boxlength}{{\bf
+MENG PROJECT, FA20\hfill Linux Kernel Modifications}\\
+% TODO: fill in your own name, netID, and collaborators
+Name: Jonathan Gao\hfill 
+NetID: jg992
+}}
+\end{center}
+\vspace{2mm}
+
+\section*{Progress this week}
+\ind I went through the Lab 4 guide for ECE 5725, and have cross-compiled and patched the kernel for Raspberry Pi OS 5.4.72. This was relatively straightforward and I didn't run into much trouble doing so. 
+\section*{Plan for coming week}
+\ind The project proposal lists numerous avenues in which I can incorporate machine learning into scheduling and CPU governance. However, I really do need to read more into some background of scheduling. As I mention in the proposal, multiprocessor scheduling is an entirely different beast compared to uniprocessor scheduling. There are also so many different types of machine learning algorithms that I will try take a look into. I also want to learn more about the current scope of scheduling algorithms, and perhaps figure out why multilevel feedback queues are so popular in modern operating systems (and why Linux seems to diverge with the Completely Fair Scheduler in 2.64 and how the Brain F*** Scheduler manages to get even better performance). Lots of reading! I have many articles and references already lined up, which will take some time to digest.
+\section*{Problems}
+No problems so far.
+\section*{Long term plan: still OK?}
+Hopefully so! 
+
+
+
+
+
+\end{document}
+
