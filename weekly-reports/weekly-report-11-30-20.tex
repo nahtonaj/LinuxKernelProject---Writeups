@@ -1,0 +1,81 @@
+% !TeX root = ./weekly-report-11-30-20.tex
+\documentclass[12pt]{article}
+% \usepackage{fullpage}
+\usepackage{epic}
+\usepackage{eepic}
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{algorithm,algorithmic}
+\usepackage{tikz}
+\usepackage{xcolor,colortbl}
+\usepackage{wrapfig}
+\usepackage{float}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is FULLPAGE.STY by H.Partl, Version 2 as of 15 Dec 1988.
+% Document Style Option to fill the paper just like Plain TeX.
+
+\typeout{Style Option FULLPAGE Version 2 as of 15 Dec 1988}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+
+\textheight 8.9in
+
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+
+\textwidth 6.5in
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{empty}
+\setlength{\oddsidemargin}{0in}
+\setlength{\topmargin}{-0.8in}
+\setlength{\textwidth}{6.8in}
+\setlength{\textheight}{9.5in}
+
+
+\def\ind{\hspace*{0.3in}}
+\def\gap{0.1in}
+\def\bigap{0.25in}
+\newcommand{\Xomit}[1]{}
+
+
+\begin{document}
+
+\setlength{\parindent}{0in}
+\addtolength{\parskip}{0.1cm}
+\setlength{\fboxrule}{.5mm}\setlength{\fboxsep}{1.2mm}
+\newlength{\boxlength}\setlength{\boxlength}{\textwidth}
+\addtolength{\boxlength}{-4mm}
+\begin{center}\framebox{\parbox{\boxlength}{{\bf
+MENG PROJECT, FA20\hfill Linux Kernel Modifications}\\
+% TODO: fill in your own name, netID, and collaborators
+Name: Jonathan Gao\hfill 
+NetID: jg992
+}}
+\end{center}
+\vspace{2mm}
+
+\section*{Progress this week}
+\ind I have been reading a paper on a complete overview of Linux process scheduling. This paper breaks down all the weird complex macros that I mentioned a few weeks ago. 
+
+I was also looking into using the CFS scheduler nice values to manipulate time slices, but it seems that it's a little more complicated than it seems. The CFS scheduler implements something beyond just process time slices, but uses group scheduling to maintain interactivity. Instead, an autogrouping function splits processes into different groups, where every group has its own portion of CPU time. However, I can likely still try to modify timeslices for groups rather than individual processes. But, this might make collecting concrete data more difficult. I found two papers that seem to modify the timeslice parameter, which I think is the niceness value. 
+
+\section*{Plan for coming week}
+Look into writing a syscall that can change group niceness values based on a model.
+
+\section*{Problems}
+
+\section*{Long term plan: still OK?}
+Hopefully so! 
+
+
+
+
+
+\end{document}
+
