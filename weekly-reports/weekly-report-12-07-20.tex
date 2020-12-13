@@ -1,0 +1,88 @@
+% !TeX root = ./weekly-report-12-07-20.tex
+\documentclass[12pt]{article}
+% \usepackage{fullpage}
+\usepackage{epic}
+\usepackage{eepic}
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{algorithm,algorithmic}
+\usepackage{tikz}
+\usepackage{xcolor,colortbl}
+\usepackage{wrapfig}
+\usepackage{float}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is FULLPAGE.STY by H.Partl, Version 2 as of 15 Dec 1988.
+% Document Style Option to fill the paper just like Plain TeX.
+
+\typeout{Style Option FULLPAGE Version 2 as of 15 Dec 1988}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+
+\textheight 8.9in
+
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+
+\textwidth 6.5in
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{empty}
+\setlength{\oddsidemargin}{0in}
+\setlength{\topmargin}{-0.8in}
+\setlength{\textwidth}{6.8in}
+\setlength{\textheight}{9.5in}
+
+
+\def\ind{\hspace*{0.3in}}
+\def\gap{0.1in}
+\def\bigap{0.25in}
+\newcommand{\Xomit}[1]{}
+
+
+\begin{document}
+
+\setlength{\parindent}{0in}
+\addtolength{\parskip}{0.1cm}
+\setlength{\fboxrule}{.5mm}\setlength{\fboxsep}{1.2mm}
+\newlength{\boxlength}\setlength{\boxlength}{\textwidth}
+\addtolength{\boxlength}{-4mm}
+\begin{center}\framebox{\parbox{\boxlength}{{\bf
+MENG PROJECT, FA20\hfill Linux Kernel Modifications}\\
+% TODO: fill in your own name, netID, and collaborators
+Name: Jonathan Gao\hfill 
+NetID: jg992
+}}
+\end{center}
+\vspace{2mm}
+
+\section*{Progress this week}
+\ind Not as much time this week as I'm finishing up my final projects and such. I did take a look into writing a syscall, but it seems that is much easier than I thought. There are macros set for defining syscalls within the table, in which I can then call it from user space using the \texttt{syscall()} function as seen in this tutorial \cite{brennanTutorialWriteSystem}. 
+
+There seems to be a lot of layers above the niceness system of the CFS scheduler. The grouping system of the scheduler ``augments'' the functionality of niceness slightly? I'm still a little unsure of this, but the autogrouping feature for CFS uses niceness values from -20 to +19 \cite{LinuxKernelArchiveRFC}. However, the cgroup utility it is based off of uses relative timeslice numbers in nanoseconds \cite{CgroupsLinuxManual,ControlGroupsLinux,heoControlGroupV22015}. I think this means that the autogrouping feature automatically adjusts the values to achieve the desired niceness values. Cgroup has had two iterations, both of them using a mounted filesystem to manage process runtime. This might be useful as it gives information on the process runtime, process ids, etc. that can help with data for a machine learning network.
+
+
+\section*{Plan for coming week}
+\ind I think the cgroup v2 functionality can prove useful. It's a big mess, but I think it can be worked out so that I can adjust the niceness values of groups. I think this is the way to go, as most programs now rely on groups of processes/threads due to increasing reliance on multiprocessor architectures. I'll take some time looking into how to work this functionality, and then on how to write a syscall that implements this functionality.
+
+There are some concerns to this however, 
+\begin{enumerate}
+    \item Mounting on the file system, how to interact with these files through C
+    \item From my findings so far, it seems like every process has its own group. This might be from autogrouping, so it might be worthwhile to just use the autogrouping functionality instead. It is pretty similar, but doesn't offer any runtime information.
+\end{enumerate}
+\section*{Problems}
+Perhaps some, as mentioned above.
+\section*{Long term plan: still OK?}
+A little behind, but still within reason.
+
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+
+
+\end{document}
+
