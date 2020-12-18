@@ -1,5 +1,6 @@
 \documentclass[12pt]{article}
 % \usepackage{fullpage}
+\usepackage{microtype}
 \usepackage{epic}
 \usepackage{eepic}
 \usepackage{paralist}
@@ -9,6 +10,7 @@
 \usepackage{xcolor,colortbl}
 \usepackage{wrapfig}
 \usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,7 +46,7 @@
 
 \author{Jonathan Gao}
 
-\linespread{1.5}
+\linespread{1.15}
 
 \begin{document}
 
@@ -71,7 +73,7 @@
 
 \subsection*{The Scheduler}
 
-The scheduler in an operating system manages the job of ``scheduling'' processes. A operating system deals with numerous processes, all wanting to perform some task using CPU and memory. However, a modern computer may often only have a few cores or processing units, each only capable of running one process at once. Therefore, the operating system must decide which process gets to run on a processor for how long.
+\ind The scheduler in an operating system manages the job of ``scheduling'' processes. A operating system deals with numerous processes, all wanting to perform some task using CPU and memory. However, a modern computer may often only have a few cores or processing units, each only capable of running one process at once. Therefore, the operating system must decide which process gets to run on a processor for how long.
 
 Scheduling decisions can be based on a number of parameters. Some simple scheduler implementations include the First In First Out (FIFO) scheduler, where processes get CPU runtime at a first-come-first-served basis. However, this is scheduler is clearly suboptimal, as we care about parameters such as process latency, process deadlines, and overall process throughput. Thus, we have the notion of a CPU quantum, where a process given a CPU quantum will be given a short CPU runtime, say 20ms, before it is taken off and put back onto the process queue.
 
@@ -109,66 +111,84 @@ Then, without much to change and tweak in this scheduler, what does machine lear
 
 \subsubsection*{Niceness}
 
-\ind CFS revamps a priority-like value for every process called niceness \cite{InfluenceSchedulingPriority2006}. Process niceness comes from the idea of how ``nice'' a process is to other processes, or how willing they are to give up CPU time for other processes. A process has nice values ranging from -20 to +19, with all processes starting with a default nice value of 0 or otherwise inherited from its parent process. Niceness values indicate how much CPU time a process will consume relative to other processes' niceness. Processes that all have niceness values of 0 will share CPU time equally, whereas a +19 process will only have 5\% CPU utilization. 
+\ind CFS revamps a priority-like value for every process called niceness \cite{InfluenceSchedulingPriority2006}. Process niceness comes from the idea of how ``nice'' a process is to other processes, or how willing they are to give up CPU time for other processes. A process has nice values ranging from -20 to +19, with all processes starting with a default nice value of 0 or otherwise inherited from its parent process. Niceness values indicate how much CPU time a process will consume relative to other processes' niceness. Processes that all have niceness values of 0 will share CPU time equally, whereas a +19 process will only have 5\% CPU utilization. A curve for niceness to CPU utilization is shown in Figure \ref{fig:niceness}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/niceness.png}
+    \caption{Niceness to CPU utilization, as shown from the CFS scheduler documentation \cite{DocumentationSchedulerSchednicedesign}}
+    \label{fig:niceness}
+\end{figure}
 
 Nice values for processes can be adjusted, almost like how processes are shifted around the queues in MLFQ, to give more CPU time to certain processes and less to others. Rather, we can use these to improve interactivity and improve response time based on process type. Currently, niceness is not set by any operating system feature, thus is a feature available for users to adjust their process behavior. 
 
-Additionally, there is a grouping feature introduced to the CFS to further improve interactivity \cite{heoControlGroupV22015,ControlGroupsLinux}. Control groups in Linux group processes together, where each group has set assigned resources. Instead, a process nice value only affects CPU runtime within a group. The idea of control groups was introduced to Linux to control the resources of groups of processes, where a cgroup could be defined to limit the CPU utilization, memory usage, and other resources such as network bandwidth. While cgroups do not necessarily have a notion of niceness, niceness of a cgroup is implemented through CPU quota and period values. The quota of a cgroup is how much CPU runtime processes within the cgroup get within a period \cite{seltzerUnderstandingCgroups2018}. These are usually defined in microseconds. We see that we can similarly limit a cgroup of processes to consume only a percentage of CPU utilization. Cgroups do get a little more complicated, but ultimately are primarily used for containerization of processes.
+Additionally, there is a grouping feature introduced to the CFS to further improve interactivity \cite{heoControlGroupV22015,ControlGroupsLinux}. Control groups in Linux group processes together, where each group has set assigned resources. Instead, a process nice value only affects CPU runtime within a group. The idea of control groups was introduced to Linux to control the resources of groups of processes, where a cgroup could be defined to limit the CPU utilization, memory usage, and other resources such as network bandwidth. Niceness of a cgroup is implemented through CPU quota and period values. The quota of a cgroup is how much CPU runtime processes within the cgroup get within a period \cite{seltzerUnderstandingCgroups2018}. These are usually defined in microseconds. We see that we can similarly limit a cgroup of processes to consume only a percentage of CPU utilization. Cgroups do get a little more complicated, but ultimately are primarily used for containerization of processes. There are two versions of cgroups infrastructure. v1 and v2 both use the same pseudo filesystem at \texttt{/sys/fs/cgroup/}, but use different structures in mounting controllers. We will be focusing on the cgroups v2 implementation \cite{heoControlGroupV22015}. Cgroups2 has a notion of niceness, or rather CPU weight, that can be defined through the traditional niceness values. By setting a value from -20 to +19 in \texttt{cpu.weight.nice} under the cgroup directory, the cgroup service will set the cpu weights for each group according to the nice values \cite{CPUControllerCgroup2}.
 
 How does containerization of processes improve interactivity? Consider the following example, where we have two processes of equal niceness. One of these processes has is single-threaded, while the other spawns 8 threads. Because Linux treats threads identically to processes, we see that the multithreaded process will end up taking 90\% of CPU utilization. Rather, if we constrain a process and its subprocesses within a cgroup, we maintain interactivity such that threaded processes do not overwhelm the CPU.
 
 \subsubsection*{Autogrouping}
 
-An autogrouping feature was introduced in Linux 2.6, where processes are grouped automatically. From the autogrouping documentation under the \texttt{sched} documentation \cite{SchedLinuxManual}, we see that processes spawned under a new session automatically get placed into its own kernel ``task group.'' Despite the same notion of a task group, the autogrouping feature does not use the existing cgroup infrastructure. Unfortunately, this makes all of the different notions of task grouping very confusing. The autogrouping feature is enabled on some kernels and disabled on others, but can be checked by running \texttt{cat /proc/sys/kernel/sched\_autogroup\_enabled}. Task groups are created on a new session created by \texttt{setdsid()}, where all tasks spawned in this group inherit the group of the parent process. There is also another notion of process groups, where each group has its own group ID used by other syscalls for job control and credential management \cite{CredentialsLinuxManual, troanProcessModelLinux2005}. The autogroup functionality uses the same notion of niceness, where a nice value is applied to the entire group. The nice values are found under the \texttt{/proc/\$PID/autogroup} and can be changed to modify the niceness of the group. 
+\ind An autogrouping feature was introduced in Linux 2.6, where processes are grouped automatically. From the autogrouping documentation under the \texttt{sched} documentation \cite{SchedLinuxManual}, we see that processes spawned under a new session automatically get placed into its own kernel ``task group.'' Despite the same notion of a task group, the autogrouping feature does not use the existing cgroup infrastructure. Unfortunately, this makes all of the different notions of task grouping very confusing. The autogrouping feature is enabled on some kernels and disabled on others, but can be checked by running \texttt{cat /proc/sys/kernel/sched\_autogroup\_enabled}. Task groups are created on a new session created by \texttt{setdsid()}, where all tasks spawned in this group inherit the group of the parent process. There is also another notion of process groups, where each group has its own group ID used by other syscalls for job control and credential management \cite{CredentialsLinuxManual, troanProcessModelLinux2005}. The autogroup functionality uses the same notion of niceness, where a nice value is applied to the entire group. The nice values are found under the \texttt{/proc/\$PID/autogroup} and can be changed to modify the niceness of the group. 
 
-Users have noted that the inclusion of the autogroup feature essentially nullifies the traditional niceness of processes, as now the \texttt{nice} command only gets reflected in the behavior within an autogroup \cite{nburginWhyNiceLevels2019}.  
+Users have noted that the inclusion of the autogroup feature essentially nullifies the traditional niceness of processes, as now the \texttt{nice} command only gets reflected in the behavior within an autogroup \cite{nburginWhyNiceLevels2019}. Because of this, the \texttt{nice} and \texttt{renice} commands no longer have their intended effect. 
+With both cgroups and autogroups both offering management of CPU runtime, these two features do not overlap. More importantly, cgroup configuration will always override the autogroup configuration.
+
+\subsubsection*{Systemd configuration}
+
+\ind Another service was introduced to the Linux kernel that also offers process grouping functionality. This service, systemd, is an improved init daemon that manages essentially all of the systems background processes and services, offers a software platform for all other programs, and replaces the old init daemon in most Linux kernels today \cite{Systemd2020}. We will focus mainly on the management of processes using the cgroup infrastructure discussed before.
+
+Systemd creates cgroups for every service on startup, but uses the cgroup v1 controllers by default. It can use v2 infrastructure as well, but this requires booting the kernel with a special boot flag \texttt{cgroup\_no\_v1=allows} and \texttt{systemd.unified\_cgroup\_hierarchy=1} \cite{CgroupsArchWiki}. With the cgroups v2 infrastructure, we can set weights on the cgroups created by systemd. In Figure \ref{fig:systemd-cgtop}, we see the
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/systemd-cgtop.png}
+    \caption{\texttt{systemd-cgtop} command output. This shows the cgroups created by \texttt{systemd}, along with CPU and memory utilization. These services shown here are all under the system cgroup, where user services have their own cgroup.}    
+    \label{fig:systemd-cgtop}
+\end{figure}
+
+The systemd service containerizes all services spawned, but does not deal with processes spawned after boot. Rather, processes spawned from new sessions will be grouped by autogrouping. Thus, we notice that process fall into two realms, services run in the background managed by systemd and processes initiated afterwards managed by autogrouping\footnote{This might not be entirely accurate, as my research for systemd and autogrouping is still ongoing. I'm still not quite sure how the autogrouping niceness comes into play with the cgroup parameters. It seems that these two infrastructures are largely separate, so documentation regarding both is fairly limited. Many administrators focused on cgroups infrastructure turn off autogrouping, so this might need a little bit of digging.}. 
 
 \section*{Planned modifications}
 
-\subsubsection*{Using cgroups instead of processes}
+\subsubsection*{Using groups instead of processes}
 
-- instead, I want to focus on modifying the niceness values of cgroups formed by the autogrouping feature
+\ind As many have mentioned in forums, blog posts, and articles, the model of completely fair scheduling is not always be the best model. While individual processes can have their CPU timeslice adjusted through niceness, we have already discussed how autogrouping and cgroups have neutered the effectiveness of nice. Rather, the face of multiprocessing has given rise to the dominance of containerization of processes through resource limiting. As of writing this paper, the Linux kernel offers several notions of process grouping, through autogrouping as part of CFS implementation or through cgroups as part of the systemd service. 
+
+Thus, I will focus my modifications on manipulating CPU timeslices of groups of processes. As systemd cgroups mainly contain system services run in the background, I will begin by focusing on the autogrouping functionality of the scheduler. As most background tasks tend to be somewhat less demanding in terms of interactivity, the effects of niceness in autogrouped processes may prove to be more tangible. However, the scope of this work can be easily extended into systemd by reworking the renicing process with the systemd API.
+
+For modifying niceness of autogroups, a daemon can be run modifying the autogroup nice values taken from the \texttt{/proc/} filesystem. Changes made to files here should be validated automatically and nice values should propagate to all processes within the group\footnote{Assuming the autogrouping functionality works how I think it does... The documentation was pretty vague about how parameters get persisted or invoked.}.
+
 
 \subsubsection*{Regression to determine niceness value for cgroup}
 
-- I was thinking that I could use ideas from MLFQ, using parameters such as execution time, estimated deadlines, etc. to determine the niceness of the process.
+\ind With inspiration from the MLFQ scheduler, I plan to use a regression model or objective function to optimize autogroup niceness over time. The goal is to find the optimal niceness value, or optimal CPU timeslice, over time through feedback. With 40 nice levels, this can essentially be 40 levels where groups will migrate between them based on some feedback. This approach is similar to the one discussed in \cite{rinkuReinforcementLearningBased2020}, where an objective function determined transitions between different queues.
 
-- process information can be found in the pseudo filesystem located under \texttt{/proc/}, along with all of the information regarding cgroups and autogrouping.
-
-\subsubsection*{Modifying the autogroup feature}
-
-- rather than modifying the niceness of a group after its inception, I can modify the autogroup feature to decide on the niceness value.
+Data about processes can be found in the \texttt{/proc/} filesystem for each process. This includes essentially everything to know about a process, with a few relevant examples including CPU runtime, memory usage, average runtime, context switches, and number of threads.
 
 \subsubsection*{Other notes}
 
-I can implement a syscall on a timer that ``renices'' all processes every so often, such that we can get dynamic nice values depending on certain factors. 
+\ind For implementation, I can implement a syscall on a timer that ``renices'' all processes every so often, such that we get dynamic nice values depending on certain factors. This syscall can then be tied to some recurring process, either through a timer interrupt or possibly even just a cron job. This is assuming that renicing processes requires a syscall, as it is possible to simply write with root permissions to the \texttt{/proc/} directory. However, this will require further investigation.
 
-The niceness of processes isn't really used, which is curious as niceness directly affects CPU utilization. Perhaps we can have a similar level system of niceness, where processes will shift between different levels of niceness. 
-
-I need to look further into sleeper fairness, which affects I/O bound processes and sleeping processes.
+I need to look further into sleeper fairness, which affects I/O bound processes and sleeping processes. This is a concept introduced by the CFS, where the scheduler will try to give sleeping processes a fair share of CPU time right as they wake up.
 
 \section*{Data Collection}
 
 \subsubsection*{Picking workloads}
 
-- thinking about using kernel compilation time to see if we see any changes to CPU behavior and process execution
+\ind As many of the references suggest, compiling the Linux kernel is a fairly consistent and reliable workload that can be run with any number of threads. However, because we are not simply measuring a CPU bound workload, we need a variety of workloads to emulate an average user workload. These tasks include video/audio encoding and decoding, text editing, web browsing, and potentially even gaming.
 
-\subsubsection*{Averaging computation times}
-
-- because Linux has many background processes running, I will average computation times and results over many executions to try to constrain other variables
+Part of my goal is to improve the overall user experience by decreasing latency and improving responsiveness in certain tasks at the cost of reducing performance in others. As mentioned before, not all tasks necessarily deserve a ``fair'' share of CPU runtime. Thus, this will require my machine learning model or objective function to somehow quantify how ``relevant'' or ``interactive'' a process is.
 
 \subsubsection*{Quantifying performance and interactivity}
 
-- thinking about having a user task i.e. video playback run while the kernel compile runs
+\ind While the performance of my changes might not be targeted at improving metrics, I will still try to quantify the performance of the system. This includes average turnaround time, process throughput, and average CPU utilization through a variety of workloads.
 
- 
+\subsubsection*{Notes}
 
+\ind Many of the resources below have not been directly referenced or cited. However, all of these resources have contributed to my understanding of the Linux kernel and its functionality. Thus, while the ones cited have direct references to what I mention, the other references have auxiliary information on the topics I discuss.
 
-
-
-
-
-
+\nocite{*}
+\raggedright
 \bibliography{references}
 \bibliographystyle{ieeetr}
 
