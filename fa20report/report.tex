@@ -49,22 +49,23 @@
 \linespread{1.15}
 
 \begin{document}
+\pagestyle{plain}
 
 \begin{titlepage}
-   \begin{center}
-       \vspace*{5cm}
-       {\huge\textbf{CPU governance and scheduling using machine learning implemented on a Linux kernel}}\\
-       \vspace{1.5cm}
-       {\large Fall 2020 semester report}
-       \vspace{1.5cm}
-       
-       \textbf{Jonathan Gao}
-       \vfill
-       \vspace{0.8cm}
-       Cornell University\\
-       \today
-            
-   \end{center}
+    \begin{center}
+        \vspace*{5cm}
+        {\huge\textbf{CPU governance and scheduling using machine learning implemented on a Linux kernel}}\\
+        \vspace{1.5cm}
+        {\large Fall 2020 semester report}
+        \vspace{1.5cm}
+        
+        \textbf{Jonathan Gao}
+        \vfill
+        \vspace{0.8cm}
+        Cornell University\\
+        \today
+        
+    \end{center}
 \end{titlepage}
 
 \section*{Introduction}
@@ -111,7 +112,7 @@ Then, without much to change and tweak in this scheduler, what does machine lear
 
 \subsubsection*{Niceness}
 
-\ind CFS revamps a priority-like value for every process called niceness \cite{InfluenceSchedulingPriority2006}. Process niceness comes from the idea of how ``nice'' a process is to other processes, or how willing they are to give up CPU time for other processes. A process has nice values ranging from -20 to +19, with all processes starting with a default nice value of 0 or otherwise inherited from its parent process. Niceness values indicate how much CPU time a process will consume relative to other processes' niceness. Processes that all have niceness values of 0 will share CPU time equally, whereas a +19 process will only have 5\% CPU utilization. A curve for niceness to CPU utilization is shown in Figure \ref{fig:niceness}.
+\ind CFS revamps a priority-like value for every process called niceness \cite{InfluenceSchedulingPriority2006}. Process niceness comes from the idea of how ``nice'' a process is to other processes, or how willing they are to give up CPU time for other processes. A process has nice values ranging from -20 to +19, with all processes starting with a default nice value of 0 or otherwise inherited from its parent process. Niceness values indicate how much CPU time a process will consume relative to other processes' niceness. Processes that all have niceness values of 0 will share CPU time equally. However, if two processes have nice values of 0 and +19 respectively, the second process will only take up 5\% of CPU runtime. A curve for niceness to CPU utilization is shown in Figure \ref{fig:niceness}.
 
 \begin{figure}
     \centering
@@ -137,12 +138,12 @@ With both cgroups and autogroups both offering management of CPU runtime, these 
 
 \ind Another service was introduced to the Linux kernel that also offers process grouping functionality. This service, systemd, is an improved init daemon that manages essentially all of the systems background processes and services, offers a software platform for all other programs, and replaces the old init daemon in most Linux kernels today \cite{Systemd2020}. We will focus mainly on the management of processes using the cgroup infrastructure discussed before.
 
-Systemd creates cgroups for every service on startup, but uses the cgroup v1 controllers by default. It can use v2 infrastructure as well, but this requires booting the kernel with a special boot flag \texttt{cgroup\_no\_v1=allows} and \texttt{systemd.unified\_cgroup\_hierarchy=1} \cite{CgroupsArchWiki}. With the cgroups v2 infrastructure, we can set weights on the cgroups created by systemd. In Figure \ref{fig:systemd-cgtop}, we see the
+Systemd creates cgroups for every service on startup, but uses the cgroup v1 controllers by default. It can use v2 infrastructure as well, but this requires booting the kernel with a special boot flag \texttt{cgroup\_no\_v1=allows} and \texttt{systemd.unified\_cgroup\_hierarchy=1} \cite{CgroupsArchWiki}. With the cgroups v2 infrastructure, we can set weights on the cgroups created by systemd. In Figure \ref{fig:systemd-cgtop}, we see the output of the \texttt{systemd-cgtop} command, which shows the resource utilization of cgroups in the system. This command shows the output with the hierarchy following the cgroup hierarchy.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.9\textwidth]{images/systemd-cgtop.png}
-    \caption{\texttt{systemd-cgtop} command output. This shows the cgroups created by \texttt{systemd}, along with CPU and memory utilization. These services shown here are all under the system cgroup, where user services have their own cgroup.}    
+    \includegraphics[width=\textwidth]{images/systemd-cgtop.png}
+    \caption{\texttt{systemd-cgtop} command output. This shows the cgroups created by \texttt{systemd}, along with CPU and memory utilization. The services shown here are all under the system cgroup, where user services have their own cgroup.}
     \label{fig:systemd-cgtop}
 \end{figure}
 
@@ -175,7 +176,7 @@ I need to look further into sleeper fairness, which affects I/O bound processes 
 
 \subsubsection*{Picking workloads}
 
-\ind As many of the references suggest, compiling the Linux kernel is a fairly consistent and reliable workload that can be run with any number of threads. However, because we are not simply measuring a CPU bound workload, we need a variety of workloads to emulate an average user workload. These tasks include video/audio encoding and decoding, text editing, web browsing, and potentially even gaming.
+\ind As many of the references suggest, compiling the Linux kernel is a fairly consistent and reliable workload that can be run with any number of threads. However, because we are not simply measuring a CPU bound workload, we need a variety of workloads to emulate an average user workload. There are a number of benchmark tools available, as seen in this compiled list \cite{LinuxBenchmarkScripts2019}. For interactivity, I found a benchmark that ``emulates the scheduling behavior of interactive tasks and measure[s] their scheduling latency and jitter'' \cite{kolivasCkolivasInterbench2020}. These benchmarks will give me a good comparison of sytem performance before and after my implementation.
 
 Part of my goal is to improve the overall user experience by decreasing latency and improving responsiveness in certain tasks at the cost of reducing performance in others. As mentioned before, not all tasks necessarily deserve a ``fair'' share of CPU runtime. Thus, this will require my machine learning model or objective function to somehow quantify how ``relevant'' or ``interactive'' a process is.
 

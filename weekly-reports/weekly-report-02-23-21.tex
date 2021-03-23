@@ -1,0 +1,120 @@
+% !TeX root = ./weekly-report-02-23-21.tex
+\documentclass[12pt]{article}
+% \usepackage{fullpage}
+\usepackage{epic}
+\usepackage{eepic}
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{algorithm,algorithmic}
+\usepackage{tikz}
+\usepackage{xcolor,colortbl}
+\usepackage{wrapfig}
+\usepackage{float}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is FULLPAGE.STY by H.Partl, Version 2 as of 15 Dec 1988.
+% Document Style Option to fill the paper just like Plain TeX.
+
+\typeout{Style Option FULLPAGE Version 2 as of 15 Dec 1988}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+
+\textheight 8.9in
+
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+
+\textwidth 6.5in
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{empty}
+\setlength{\oddsidemargin}{0in}
+\setlength{\topmargin}{-0.8in}
+\setlength{\textwidth}{6.8in}
+\setlength{\textheight}{9.5in}
+
+
+\def\ind{\hspace*{0.3in}}
+\def\gap{0.1in}
+\def\bigap{0.25in}
+\newcommand{\Xomit}[1]{}
+
+
+\begin{document}
+
+\setlength{\parindent}{0in}
+\addtolength{\parskip}{0.1cm}
+\setlength{\fboxrule}{.5mm}\setlength{\fboxsep}{1.2mm}
+\newlength{\boxlength}\setlength{\boxlength}{\textwidth}
+\addtolength{\boxlength}{-4mm}
+\begin{center}\framebox{\parbox{\boxlength}{{\bf
+MENG PROJECT, FA20\hfill Slang Full Stack Development}\\
+% TODO: fill in your own name, netID, and collaborators
+Name: Jonathan Gao\hfill 
+NetID: jg992
+}}
+\end{center}
+\vspace{2mm}
+
+\section*{Prototype Scope}
+
+\ind For my M.Eng project, I will plan on delivering a prototype of Slang by the end of the semester. While this will be a working prototype, I am aiming mostly for a proof of concept. I will define the scope of the prototype below.
+
+For the prototype, I am mostly focusing on implementing enough of the backend to enable preliminary user testing. This includes, but is not limited to, the following services.
+
+\begin{enumerate}
+    \item NoSQL database for scalable storage
+    \item API to fetch, update, and delete items from storage
+    \item Stateless functions that will modify the items in the database
+    \item Basic user authentication and authorization with access control for user information
+    \item A skeleton matching algorithm that will give a list of matches per user and/or group
+\end{enumerate}
+
+\subsection*{NoSQL database}
+
+\ind This database will serve as the storage of all information for Slang. Currently, I am planning on using DynamoDB to store all information per user. I can define my own fields for each row in DynamoDB, where I can add/modify the data according to what the app needs. 
+
+Currently I plan on having each row with these fields 
+\begin{enumerate}
+    \item Name
+    \item Phone Number
+    \item Email Address
+    \item Profile (meta information about the person)
+    \item List of suggested matches
+    \item Metadata of profile (time created, number of matches, etc.)
+\end{enumerate}
+
+Each row will be indexed by a profile ID, which is unique for each user. This will need to be implemented in conjunction with user authentication.
+For now, I plan on just implementing this database. In the future, this can be expanded with more tables for information such as suggested events, suggested friends, and information from linked social media accounts.
+
+\subsection*{API}
+
+\ind To actually interact with the database, we will provide an API to fetch information. The API will define calls for modifying and creating data in our database without exposing implementation details. Some of the functions implemented will be as follows. These will be defined with REST API convention, but may be adapted to use AWS GraphQL.
+
+\begin{itemize}
+    \item GET profile
+    \item POST profile
+    \item PUT profile
+    \item DELETE profile
+\end{itemize}
+
+I am thinking that on each GET request, we reprocess our matches before returning the profile. Or, there is a S3 trigger that can run after new data is input, meaning that it might be possible to process matches as we get new data. 
+
+\subsection*{Functions}
+
+\ind The API gateway is an interface that will invoke the Lambda Functions. For each of these API operations, we will have some Lambda Function that can process the operation and return the expected result. These are stateless functions, which will scale effectively.
+
+\subsection*{Authentication and Authorization}
+
+User authentication and authorization will be handled through Amazon Cognito, which is a authentication and authorization service offered in AWS. I am pretty unfamiliar with this realm, but user authentication is fairly consistent across most web applications. I will need to figure out how to use authorization to limit access to database keys.
+
+\subsection*{Matching}
+
+
+
+\end{document}
+
